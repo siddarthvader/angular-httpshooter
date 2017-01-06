@@ -93,7 +93,7 @@
 		};
 
 		var success = function (data) {
-			$rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
+			$rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config);
 			$rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
 			$rootScope.httpshooter_queuedCalls.shift();
 			if ($rootScope.httpshooter_queuedCalls.length > 0) {
@@ -102,7 +102,7 @@
 		};
 
 		var fail= function (data) {
-			$rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
+			$rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config);
 			$rootScope.httpshooter_queuedCalls[0].deferred.reject(data);
 			$rootScope.httpshooter_queuedCalls.shift();
 			if ($rootScope.httpshooter_queuedCalls.length > 0) {
@@ -280,7 +280,8 @@
 	}
 
 	angular.module('angular-httpshooter').constant('shootConfig', {
-		blockDuplicateCalls: true,
+		defaultTimeOut:36000,
+        blockDuplicateCalls: true,
 		compareDuplicateParam:{
 			url:true,
 			data:false
