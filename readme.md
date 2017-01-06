@@ -15,6 +15,10 @@ Almost all new databases handle it on their level and serialize read/write calls
 >> NOTE: it will only matches the calls which are yet to take place, past calls are removed from queue as soon as the server returns response.
 
 
+> ![Example network panel](http://i.imgur.com/7i9FSkZ.png)
+
+
+
 ## Features
 
 * One api/server call in action at one point of time.
