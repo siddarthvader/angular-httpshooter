@@ -1,0 +1,27 @@
+{
+  "name": "angular-httpshooter",
+  "version": "1.0.0",
+  "description": "An angular js factory which shoots http calls asynchronously.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siddarthvader/angular-httpshooter.git"
+  },
+  "keywords": [
+    "angular",
+    "async",
+    "http",
+    "calls",
+    "angular",
+    "http"
+  ],
+  "author": "siddarthvader (siddharthjn93@gmail.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/siddarthvader/angular-httpshooter/issues"
+  },
+  "homepage": "https://github.com/siddarthvader/angular-httpshooter#readme"
+}

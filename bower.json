@@ -1,0 +1,25 @@
+{
+  "name": "angular-httpshooter",
+  "description": "An angular js factory which shoots http calls asynchronously.",
+  "main": "index.js",
+  "authors": [
+    "siddarthvader (siddharthjn93@gmail.com)"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "angular",
+    "async",
+    "http",
+    "calls",
+    "angular",
+    "http"
+  ],
+  "homepage": "https://github.com/siddarthvader/angular-httpshooter",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
