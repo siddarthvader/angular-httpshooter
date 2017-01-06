@@ -23,22 +23,6 @@ Almost all new databases handle it on their level and serialize read/write calls
 * it releases two events on $rootScope `HTTP_CALL_STARTED` and `HTTP_CALL_STOPPED`, also sends config objects with events, you can catch this event and do many things. e.g. show loader or block UI from interaction.
 
 
-## Options
-
-Here are defaults values and possible values that can be passed to the factory for further processing.
-
-````bash
-| Property  |        Acceptable options       | Default options |
-|-----------|---------------------------------|-----------------|
-|  Method   |  get,post,delete,head,put,patch |        none     |
-|  url      |            <string>             |        none     |
-|  data     |            <object>             |        none     |
-|  headers  |            <object>             |        none     |
-|  timeout  |       time in miliseconds       |     36000ms     |
-
-````
-
-
 ## Use Angular-httpshooter in your webapp
 
 install using npm
@@ -85,6 +69,22 @@ In your Controller
 
 Yes it is as simple as this.
 
+
+
+## Options
+
+Here are defaults values and possible values that can be passed to the factory for further processing.
+
+````bash
+| Property  |        Acceptable options       | Default options |
+|-----------|---------------------------------|-----------------|
+|  Method   |  get,post,delete,head,put,patch |        none     |
+|  url      |            <string>             |        none     |
+|  data     |            <object>             |        none     |
+|  headers  |            <object>             |        none     |
+|  timeout  |       time in miliseconds       |     36000ms     |
+
+````
 
 ## Events
  
