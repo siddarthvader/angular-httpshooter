@@ -13,15 +13,24 @@
 
 			var flag = true;
 
+			console.info($rootScope.httpshooter_queuedCalls);
+
 			if (!$rootScope.httpshooter_queuedCalls) {
 				$rootScope.httpshooter_queuedCalls = [];
 			}
 			else{
-				if (shootConfig.allowDuplicateCalls && $rootScope.httpshooter_queuedCalls.length ) {
+				if (shootConfig.blockDuplicateCalls && $rootScope.httpshooter_queuedCalls.length ) {
+
 					$rootScope.httpshooter_queuedCalls.forEach(function (http, i) {
-						console.log(http.config.url, config.url, i);
-						if (http.config.url == config.url) {
-							flag = false;
+						if(shootConfig.compareDuplicateParam.url){
+							if (http.config.url == config.url) {
+								flag = false;
+							}
+						}
+						if(shootConfig.compareDuplicateParam.data){
+							if(angular.equals(http.config.data,config.data)){
+								flag=false;
+							}
 						}
 					});
 				}
@@ -100,7 +109,7 @@
 				callDeterminer();
 			}
 		};
-		
+
 		var get = function (config,time) {
 
 			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
@@ -141,11 +150,11 @@
 				data: config.data,
 				timeout: timeout
 			}).then(function (data) {
-				
+
 				success(data.data);
 
 			}, function (data) {
-				
+
 				fail(data.data);
 
 			}).finally(function () {
@@ -171,11 +180,11 @@
 			}).then(function (data) {
 
 				success(data.data);
-				
+
 			}, function (data) {
-				
+
 				fail(data.data);
-				
+
 			}).finally(function () {
 				$timeout.cancel(timeout);
 			});
@@ -197,20 +206,20 @@
 				data: config.data,
 				timeout: timeout
 			}).then(function (data) {
-				
+
 				success(data.data);
-				
+
 			}, function (data) {
-				
+
 				fail(data.data);
-			
+
 			}).finally(function () {
 				$timeout.cancel(timeout);
 			});
 
 		};
 
-		
+
 		var deleteCall = function (config, time) {
 
 			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
@@ -231,9 +240,9 @@
 
 
 			}, function (data) {
-				
+
 				fail(data.data);
-				
+
 			}).finally(function () {
 				$timeout.cancel(timeout);
 			});
@@ -253,27 +262,29 @@
 				method: 'HEAD',
 				timeout: timeout
 			}).then(function (data) {
-				
+
 				success(data.data);
 
 			}, function (data) {
-				
+
 				fail(data.data);
 
 			}).finally(function () {
 				$timeout.cancel(timeout);
 			});
 		};
-		
+
 		return {
 			queue: queue
 		};
-
 	}
 
 	angular.module('angular-httpshooter').constant('shootConfig', {
-		allowDuplicateCalls: true,
-		defaultTimeOut:36000
+		blockDuplicateCalls: true,
+		compareDuplicateParam:{
+			url:true,
+			data:false
+		}
 	});
 
 })();
