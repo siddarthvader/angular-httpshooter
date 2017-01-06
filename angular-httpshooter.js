@@ -1,344 +1,286 @@
-(function () {
-    'use strict';
-    angular.module('angular-httpshooter').factory('$httpshooter'['$http', '$q', '$timeout', '$rootScope', 'shootConfig', function ($http, $q, $timeout, $rootScope, shootConfig) {
-
-        var queue = function (config, time) {
-
-            var flag = true;
-
-            if (!$rootScope.httpQueue.length) {
-                $rootScope.httpQueue = [];
-            }
-
-            if (shootConfig.allowDuplicateCalls) {
-                $rootScope.httpshooter_queuedCalls.forEach(function (http, i) {
-                    console.log(http.config.url, config.url, i);
-                    if (http.config.url == config.url) {
-                        flag = false;
-                    }
-                });
-            }
-
-            var deferred = $q.defer();
-
-            if (flag) {
-                $rootScope.httpshooter_queuedCalls.push({ config: config, deferred: deferred, time: time });
-                if ($rootScope.httpshooter_queuedCalls.length === 1) {
-
-                    /*
-                     * - broadcasting HTTP_CALL_STARTED event, you can catch this event and 
-                     * do different kind of things, like start a loader or something
-                     */
-
-                    if (config.method != 'get') {
-                        $rootScope.$broadcast('HTTP_CALL_STARTED', config);
-                    }
-                    callDeterminer();
-                }
-                return deferred.promise;
-
-            }
-            else {
-                return $q.reject({
-                    data: '',
-                    headers: {},
-                    status: 400,
-                    config: config
-                });
-            }
-        };
-
-        var callDeterminer = function () {
-
-            var config = $rootScope.httpshooter_queuedCalls[0].config;
-            switch (config.method.toLowetCase()) {
-                case 'get':
-                    get(config.url, $rootScope.httpshooter_queuedCalls[0].time);
-                    break;
-                case 'delete':
-                    deleteCall(config.url, $rootScope.httpshooter_queuedCalls[0].time);
-                    break;
-                case 'head':
-                    head(config.url, $rootScope.httpshooter_queuedCalls[0].time);
-                    break;
-                case 'post':
-                    post(config.url, config.data, $rootScope.httpshooter_queuedCalls[0].time);
-                    break;
-                case 'patch':
-                    patch(config.url, config.data, $rootScope.httpshooter_queuedCalls[0].time);
-                    break;
-                case 'put':
-                    put(config.url, config.data, $rootScope.httpshooter_queuedCalls[0].time);
-                    break;
-            }
-
-        };
-
-
-        var get = function (url, time) {
-
-            var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
-            var timeout = $timeout(function () {
-                deferred.reject('Timeout');
-            }, time);
-
-
-            $http({
-                url: url,
-                method: 'GET',
-                timeout: timeout
-            }).then(function (data) {
-
-                data = data.data;
-                // broadcasting HTTP_CALL_STOPPED event,
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config);
-                $rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-                /**
-                 * since it is a queue,
-                 * we will always remove things from the top of it
-                 */
+(function(){
+	'use strict';
+	angular.module('angular-httpshooter',[])
+		.factory('$httpshooter',$httpshooter);
+
+	$httpshooter.$inject= ['$http', '$q', '$timeout', '$rootScope', 'shootConfig'];
+
+	function $httpshooter ($http, $q, $timeout, $rootScope, shootConfig) {
+
+		var timeoutMsg={error:'timeout',statusCode:599,message:'timeout'};
+
+		var queue = function (config, time) {
+
+			var flag = true;
+
+			if (!$rootScope.httpshooter_queuedCalls) {
+				$rootScope.httpshooter_queuedCalls = [];
+			}
+			else{
+				if (shootConfig.allowDuplicateCalls && $rootScope.httpshooter_queuedCalls.length ) {
+					$rootScope.httpshooter_queuedCalls.forEach(function (http, i) {
+						console.log(http.config.url, config.url, i);
+						if (http.config.url == config.url) {
+							flag = false;
+						}
+					});
+				}
+			}
+
+
+			var deferred = $q.defer();
+
+			if (flag) {
+				$rootScope.httpshooter_queuedCalls.push({ config: config, deferred: deferred, time: time?time:shootConfig.defaultTimeOut });
+				if ($rootScope.httpshooter_queuedCalls.length === 1) {
+
+					/*
+					 * - broadcasting HTTP_CALL_STARTED event, you can catch this event and
+					 * do different kind of things, like start a loader or something
+					 */
+
+					if (config.method != 'get') {
+						$rootScope.$broadcast('HTTP_CALL_STARTED', config);
+					}
+					callDeterminer();
+				}
+				return deferred.promise;
+
+			}
+			else {
+				return $q.reject({
+					data: '',
+					headers: {},
+					status: 400,
+					config: config
+				});
+			}
+		};
+
+		var callDeterminer = function () {
+
+			var config = $rootScope.httpshooter_queuedCalls[0].config;
+			switch (config.method.toLowerCase()) {
+				case 'get':
+					get(config,$rootScope.httpshooter_queuedCalls[0].time);
+					break;
+				case 'delete':
+					deleteCall(config, $rootScope.httpshooter_queuedCalls[0].time);
+					break;
+				case 'head':
+					head(config,$rootScope.httpshooter_queuedCalls[0].time);
+					break;
+				case 'post':
+					post(config,$rootScope.httpshooter_queuedCalls[0].time);
+					break;
+				case 'patch':
+					patch(config, $rootScope.httpshooter_queuedCalls[0].time);
+					break;
+				case 'put':
+					put(config,$rootScope.httpshooter_queuedCalls[0].time);
+					break;
+			}
+
+		};
+
+		var success = function (data) {
+			$rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
+			$rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
+			$rootScope.httpshooter_queuedCalls.shift();
+			if ($rootScope.httpshooter_queuedCalls.length > 0) {
+				callDeterminer();
+			}
+		};
+
+		var fail= function (data) {
+			$rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
+			$rootScope.httpshooter_queuedCalls[0].deferred.reject(data);
+			$rootScope.httpshooter_queuedCalls.shift();
+			if ($rootScope.httpshooter_queuedCalls.length > 0) {
+				callDeterminer();
+			}
+		};
+		
+		var get = function (config,time) {
+
+			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
+			var timeout = $timeout(function () {
+				deferred.reject(timeoutMsg);
+			}, time);
+
+
+			$http({
+				url: config.url,
+				method: 'GET',
+				headers:config.headers,
+				timeout: timeout
+			}).then(function (data) {
+				success(data.data);
+
+			}, function (data) {
+				fail(data.data);
+
+			}).finally(function () {
+				$timeout.cancel(timeout);
+			});
+
+		};
+
+		var post = function (config,time) {
+
+
+			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
+			var timeout = $timeout(function () {
+				deferred.reject(timeoutMsg);
+			}, time);
+
+			$http({
+				url: config.url,
+				method: 'POST',
+				headers: config.headers,
+				data: config.data,
+				timeout: timeout
+			}).then(function (data) {
+				
+				success(data.data);
+
+			}, function (data) {
+				
+				fail(data.data);
+
+			}).finally(function () {
+				$timeout.cancel(timeout);
+			});
+
+		};
+
+		var patch = function (config,time) {
+
+
+			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
+			var timeout = $timeout(function () {
+				deferred.reject(timeoutMsg);
+			}, time);
+
+			$http({
+				url: config.url,
+				method: 'POST',
+				headers: config.headers,
+				data: config.data,
+				timeout: timeout
+			}).then(function (data) {
+
+				success(data.data);
+				
+			}, function (data) {
+				
+				fail(data.data);
+				
+			}).finally(function () {
+				$timeout.cancel(timeout);
+			});
+
+		};
+
+		var put = function (config,time) {
+
+
+			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
+			var timeout = $timeout(function () {
+				deferred.reject(timeoutMsg);
+			}, time);
+
+			$http({
+				url: config.url,
+				method: 'POST',
+				headers: config.headers,
+				data: config.data,
+				timeout: timeout
+			}).then(function (data) {
+				
+				success(data.data);
+				
+			}, function (data) {
+				
+				fail(data.data);
+			
+			}).finally(function () {
+				$timeout.cancel(timeout);
+			});
+
+		};
+
+		
+		var deleteCall = function (config, time) {
+
+			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
+
+			var timeout = $timeout(function () {
+				deferred.reject(timeoutMsg);
+			}, time);
+
+			$http({
+				url: config.url,
+				method: 'DELETE',
+				data: config.data,
+				headers: config.headers,
+				timeout: timeout
+			}).then(function (data) {
+
+				success(data.data);
+
+
+			}, function (data) {
+				
+				fail(data.data);
+				
+			}).finally(function () {
+				$timeout.cancel(timeout);
+			});
+
+			return deferred.promise;
+		};
+
+		var head = function (config, time) {
+			var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
+			var timeout = $timeout(function () {
+				deferred.reject(timeoutMsg);
+			}, time);
+
+
+			$http({
+				url: url,
+				method: 'HEAD',
+				timeout: timeout
+			}).then(function (data) {
+				
+				success(data.data);
+
+			}, function (data) {
+				
+				fail(data.data);
+
+			}).finally(function () {
+				$timeout.cancel(timeout);
+			});
+		};
+		
+		return {
+			queue: queue
+		};
+
+	}
+
+	angular.module('angular-httpshooter').constant('shootConfig', {
+		allowDuplicateCalls: true,
+		defaultTimeOut:36000
+	});
+
+})();
+
+
+(function(){
+	'use strict';
+})();
 
 
-            }, function (data) {
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config);
-                $rootScope.httpshooter_queuedCalls[0].deferred.reject(data.data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-            }).finally(function () {
-                $timeout.cancel(timeout);
-            });
-
-        };
-
-        var post = function (url, data, time, loader) {
-
-
-            var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
-            var timeout = $timeout(function () {
-                deferred.reject('Timeout');
-            }, time);
-
-            $http({
-                url: url,
-                method: 'POST',
-                headers: headers,
-                data: data,
-                timeout: timeout
-            }).then(function (data) {
-
-                data = data.data;
-
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }, function (data) {
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.reject(data.data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }).finally(function () {
-                $timeout.cancel(timeout);
-            });
-
-        };
-
-        var patch = function (url, data, time, loader) {
-
-
-            var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
-            var timeout = $timeout(function () {
-                deferred.reject('Timeout');
-            }, time);
-
-            $http({
-                url: url,
-                method: 'POST',
-                headers: headers,
-                data: data,
-                timeout: timeout
-            }).then(function (data) {
-
-                data = data.data;
-
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }, function (data) {
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.reject(data.data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }).finally(function () {
-                $timeout.cancel(timeout);
-            });
-
-        };
-
-        var put = function (url, data, time, loader) {
-
-
-            var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
-            var timeout = $timeout(function () {
-                deferred.reject('Timeout');
-            }, time);
-
-            $http({
-                url: url,
-                method: 'POST',
-                headers: headers,
-                data: data,
-                timeout: timeout
-            }).then(function (data) {
-
-                data = data.data;
-
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }, function (data) {
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.reject(data.data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }).finally(function () {
-                $timeout.cancel(timeout);
-            });
-
-        };
-
-        var deleteCall = function (url, data, time, headers) {
-
-            var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
-
-            var timeout = $timeout(function () {
-                deferred.reject('Timeout');
-            }, time);
-
-            $http({
-                url: url,
-                method: 'DELETE',
-                data: data,
-                headers: headers,
-                timeout: timeout
-            }).then(function (data) {
-
-                data = data.data;
-
-                /**
-                     * since it is a queue,
-                     * we will always remove things from the top of it
-                     */
-
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-
-            }, function (data) {
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config.url);
-                $rootScope.httpshooter_queuedCalls[0].deferred.reject(data.data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-            }).finally(function () {
-                $timeout.cancel(timeout);
-            });
-
-            return deferred.promise;
-        };
-
-        var head = function (url, time) {
-            var deferred = $rootScope.httpshooter_queuedCalls[0].deferred;
-            var timeout = $timeout(function () {
-                deferred.reject('Timeout');
-            }, time);
-
-
-            $http({
-                url: url,
-                method: 'HEAD',
-                timeout: timeout
-            }).then(function (data) {
-
-                data = data.data;
-                // broadcasting HTTP_CALL_STOPPED event,
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config);
-                $rootScope.httpshooter_queuedCalls[0].deferred.resolve(data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-                /**
-                 * since it is a queue,
-                 * we will always remove things from the top of it
-                 */
-
-
-            }, function (data) {
-                $rootScope.$broadcast('HTTP_CALL_STOPPED', $rootScope.httpshooter_queuedCalls[0].config);
-                $rootScope.httpshooter_queuedCalls[0].deferred.reject(data.data);
-                $rootScope.httpshooter_queuedCalls.shift();
-                if ($rootScope.httpshooter_queuedCalls.length > 0) {
-                    callDeterminer();
-                }
-
-            }).finally(function () {
-                $timeout.cancel(timeout);
-            });
-        }
-
-        return {
-            queue: queue
-        }
-
-    }]);
-});
-
-
-(function () {
-    'use strict';
-    angular.module('angular-httpshooter').constant('shootConfig', {
-        allowDuplicateCalls: true
-    });
-});
