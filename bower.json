@@ -7,12 +7,14 @@
   ],
   "license": "MIT",
   "keywords": [
+    "loader",
+    "httploader",
+    "spinners",
+    "blockUI",
     "angular",
     "async",
     "http",
-    "calls",
-    "angular",
-    "http"
+    "calls"
   ],
   "homepage": "https://github.com/siddarthvader/angular-httpshooter",
   "ignore": [

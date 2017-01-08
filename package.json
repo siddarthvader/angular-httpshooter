@@ -1,6 +1,6 @@
 {
   "name": "angular-httpshooter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An angular js factory which shoots http calls asynchronously.",
   "main": "index.js",
   "scripts": {
@@ -11,12 +11,14 @@
     "url": "git+https://github.com/siddarthvader/angular-httpshooter.git"
   },
   "keywords": [
+    "loader",
+    "httploader",
+    "spinners",
+    "blockUI",
     "angular",
     "async",
     "http",
-    "calls",
-    "angular",
-    "http"
+    "calls"
   ],
   "author": "siddarthvader (siddharthjn93@gmail.com)",
   "license": "MIT",
