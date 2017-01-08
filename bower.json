@@ -1,7 +1,7 @@
 {
   "name": "angular-httpshooter",
   "description": "An angular js factory which shoots http calls asynchronously.",
-  "main": "index.js",
+  "main": "angular-httpshooter.min.js",
   "authors": [
     "siddarthvader (siddharthjn93@gmail.com)"
   ],
