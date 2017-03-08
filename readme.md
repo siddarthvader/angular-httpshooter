@@ -1,8 +1,7 @@
 # Angular-httpshooter
-> A factory written in angular 1.0+ which makes/shoots http calls asynchronously.
+> A factory written in angular 1.0+ which makes/shoots all http calls collectively asynchronously.
 
 Angular-httpshooter makes all your api calls asynchronous, idea behind it to make the connection between server and client single threaded, it means shooting only one call at a point of time and wait for the response from server to launch the next call.
-
 
 > It blocks duplicate calls on the basis or either `url` or `data`, you can configure it according to your need.
 
